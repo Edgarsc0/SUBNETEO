@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subneteo</title>
+</head>
+<body>
+    <h1>Ip decimal a binario</h1>
+    <hr>
+    <table border="0">
+        <tr>
+            <td><label>Ip: </label></td>
+            <td><input style="width: 300px;"  type="text" id="ip"></td>
+        </tr>
+        <tr>
+            <td><button onclick="convertir(document.getElementById('ip').value)">Pasar a binario</button></td>
+            <td><input style="width: 300px;" type="text" readonly="" id='resultado' placeholder="Esperando entrada"></td>
+        </tr>
+        <tr>
+            <td><button onclick="limpiarCampos()">Limpiar Campos</button></td>
+        </tr>
+    </table>
+    <br>
+    <br>
+    <h1>Subneteo</h1>
+    <hr>
+    <br>
+    <ul>
+        <li><p>Calcular Numero de subredes de acuerdo a hosts por subred e ip</p></li>
+        <table>
+            <tr>
+                <td><label>Ip: </label></td>
+                <td><input type="text" id="ipsbn"></td>
+            </tr>
+            <tr>
+                <td><label>Hosts por subred: </label></td>
+                <td><input type="number" id="host"></td>
+            </tr>
+            <tr>
+                <td><button onclick="calcularNsb()">Calcular Numero de subredes</button></td>
+            </tr>
+            <tr>
+                <td><label>Numero de subredes: </label></td>
+                <td><input type="number" id="resultadoNSb" readonly=""></td>
+            </tr>
+        </table>
+        <li><p>Calcular Hosts por subred de acuerdo a numero de subredes e ip</p>
+            <table>
+                <tr>
+                    <td><label>Ip: </label></td>
+                    <td><input type="text" id="ipsbn2"></td>
+                </tr>
+                <tr>
+                    <td><label>Numero de subredes:  </label></td>
+                    <td><input type="number" id="nsbr"></td>
+                </tr>
+                <tr>
+                    <td><button onclick="calcularHsb()">Calcular Numero de host por subred</button></td>
+                </tr>
+                <tr>
+                    <td><label>Numero de hosts por subred:  </label></td>
+                    <td><input type="number" id="resultadoHSb" readonly=""></td>
+                </tr>
+            </table>
+        </li>
+        <li><p>Calcular Hosts por subred y Numero de subredes de acuerdo a la mascara de subred</p></li>
+        <table>
+            <tr>
+                <td><label>Ip: </label></td>
+                <td><input type="text" id="ip3"></td>
+            </tr>
+            <tr>
+                <td><label>Mascara de subred: </label></td>
+                <td><input type="text" id="ip4"></td>
+            </tr>
+            <tr>
+                <td><button onclick="calcularHN()">Calcular</button></td>
+            </tr>
+            <tr>
+                <td>Numero de subredes: </td>
+                <td><input type="text" readonly="" id="resultado1"></td>
+            </tr>
+            <tr>
+                <td>Numero de hosts por subred: </td>
+                <td><input type="text" readonly="" id="resultado2"></td>
+            </tr>
+        </table>
+    </ul>
+    <script>
+        class Subneteo{
+            constructor(ip,mascara){
+                this._ip=ip;
+                this._mascara=mascara;
+            }
+            convertirIpBinario(ip){
+                const convertir=(stringIp)=>{
+                    if(this.validarIp(stringIp)){
+                        let ipBinaria="";
+                        let n=0;
+                        for(let i of stringIp.split('.')){
+                            let binario="";
+                            while(parseInt(i)>2**n){
+                                if(n>=7){
+                                    break;
+                                }else{
+                                    n+=1;
+                                }
+                            }
+                            for(let j=n;j>=0;j--){
+                                (2**j>i)?(binario+="0"):(binario+="1",i-=2**j);
+                            }
+                            ipBinaria+=binario+".";
+                        }
+                        return ipBinaria.slice(0,-1);
+                    }
+                }
+                if(!ip){
+                    return convertir(this._ip);
+                }else{
+                    return convertir(ip);
+                }
+            }
+            validarIp(ip){
+                const validar=(stringIp)=>{
+                    if(stringIp.split('.').length>4){
+                        return false;
+                    }else{
+                        for(let i of stringIp.split('.')){
+                            if(isNaN(i)||parseInt(i)>255||parseInt(i)<0){
+                                return false;
+                            }
+                        } 
+                        return true;  
+                    }  
+                }
+                if(!ip){
+                    return validar(this._ip);
+                }else{
+                    return validar(ip);
+                }
+            }
+            calcularHostSubredes(){
+                let mascaraBinario=this.convertirIpBinario(this._mascara);
+                let numeroUnos=0;
+                let numeroCeros=0;
+                //console.log(mascaraBinario);
+                for(let i of mascaraBinario){
+                    if(numeroUnos==8){
+                        numeroUnos=0;
+                    }else{
+                        if(i=="1"){
+                            numeroUnos+=1;
+                        }if(i=="0"){
+                            numeroCeros+=1;
+                        }
+                    }
+                }
+                return [2**numeroUnos,2**numeroCeros -2];
+            }
+            calcularHostPorSubred(redes,mascara){
+                let n=0;
+                while(parseInt(redes)>2**n){
+                    n+=1;
+                }
+                let numerosUno=0;
+                let mascaraSubredBinario=this.convertirIpBinario(this.mascaraSubred());
+                for(let i of mascaraSubredBinario){
+                    if(i=="1"){
+                        numerosUno+=1;
+                    }else{
+                        continue;
+                    }
+                }
+                return 2**(32-numerosUno-n)-2;
+            }
+            calcularSubredes(host){
+                let m=0;
+                while(parseInt(host)>2**m-2){
+                    m+=1;
+                }
+                let numerosUno=0;
+                let mascaraSubred=this.mascaraSubred();
+                let mascaraSubredBinario=this.convertirIpBinario(mascaraSubred);
+                let array=mascaraSubredBinario.split(".");
+                for(let i of array){
+                    if(i.split("1").length==1){
+                        break;
+                    }else{
+                        numerosUno+=1;
+                    }
+                }
+                let k=32-8*numerosUno-m;
+                while(k>8){
+                    k-=8;
+                }
+                return 2**k;
+            }
+            mascaraSubred(){
+                const arrayIp=this._ip.split('.');
+                const limitesIp=[127,191,223,239];
+                const mascaras=["255.0.0.0","255.255.0.0","255.255.255.0","255.255.255.255"];
+                for(let i in limitesIp){
+                    if(i==0){
+                        if(parseInt(arrayIp[0])>=0 && parseInt(arrayIp[0])<=limitesIp[i]
+                        && parseInt(arrayIp[1])>=0 && parseInt(arrayIp[1])<=255
+                        && parseInt(arrayIp[2])>=0 && parseInt(arrayIp[2])<=255
+                        && parseInt(arrayIp[3])>=0 && parseInt(arrayIp[3])<=255){
+                            return "255.0.0.0";
+                        }
+                    }else{
+                        if(parseInt(arrayIp[0])>=limitesIp[i-1]+1 && parseInt(arrayIp[0])<=limitesIp[i]
+                        && parseInt(arrayIp[1])>=0 && parseInt(arrayIp[1])<=255
+                        && parseInt(arrayIp[2])>=0 && parseInt(arrayIp[2])<=255
+                        && parseInt(arrayIp[3])>=0 && parseInt(arrayIp[3])<=255){
+                            return mascaras[i];
+                        }
+                    }
+                }
+            }
+        }
+        const calcularHN=()=>{
+            if(document.getElementById("ip3").value!=""&&document.getElementById("ip4").value!=""){
+                obj=new Subneteo(document.getElementById("ip3").value,document.getElementById("ip4").value);
+                document.getElementById("resultado1").value=obj.calcularHostSubredes()[0];
+                document.getElementById("resultado2").value=obj.calcularHostSubredes()[1];
+            }
+        }
+        const calcularHsb=()=>{
+            if(document.getElementById("ipsbn2").value!="" && document.getElementById("nsbr").value!=""){
+                obj=new Subneteo(document.getElementById("ipsbn2").value);
+                document.getElementById("resultadoHSb").value=obj.calcularHostPorSubred(document.getElementById("nsbr").value);
+            }
+        }
+        const calcularNsb=()=>{
+            if(document.getElementById("ipsbn").value!="" && document.getElementById("host").value!=""){
+                obj=new Subneteo(document.getElementById("ipsbn").value);
+                document.getElementById("resultadoNSb").value=obj.calcularSubredes(document.getElementById("host").value);
+            }
+            
+        }
+        const limpiarCampos=()=>{
+            document.getElementById("ip").value="";
+            document.getElementById("resultado").value="";
+        }
+        const convertir=(ip)=>{
+            obj=new Subneteo(ip);
+            if(obj.convertirIpBinario()==undefined){
+                alert("Revisa la entrada");
+            }else{
+                document.getElementById("resultado").value=obj.convertirIpBinario();
+            }
+        }
+    </script>
+</body>
+</html>
